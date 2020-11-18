@@ -1,0 +1,148 @@
+---
+# create namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aws-otel-eks-service
+  labels:
+    name: aws-otel-eks-service
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-otel-conf
+  namespace: aws-otel-eks-service
+  labels:
+    app: aws-otel
+    component: aws-otel-conf
+data:
+  aws-otel-config: |
+    extensions:
+      health_check:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: "0.0.0.0:55680"
+    exporters:
+      awsxray:
+      awsemf:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [awsxray]
+        metrics:
+          receivers: [otlp]
+          exporters: [awsemf]
+      extensions: [health_check]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aws-otel-collector-service
+  namespace: aws-otel-eks-service
+  labels:
+    app: aws-otel
+    component: aws-otel-collector
+spec:
+  ports:
+    - name: otlp # OTLP receiver.
+      port: 55680
+      protocol: TCP
+      targetPort: 55680
+    - name: metrics # prometheus metrics.
+      port: 8888
+      protocol: TCP
+      targetPort: 8888
+    - name: health # prometheus metrics.
+      port: 13133
+      protocol: TCP
+      targetPort: 13133
+  selector:
+    component: aws-otel-collector
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aws-otel-collector
+  namespace: aws-otel-eks-service
+  labels:
+    app: aws-otel
+    component: aws-otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aws-otel
+      component: aws-otel-collector
+  template:
+    metadata:
+      labels:
+        app: aws-otel
+        component: aws-otel-collector
+    spec:
+      containers:
+        - name: aws-otel-collector
+          image: amazon/aws-otel-collector:latest
+          command:
+            - "/awscollector"
+            - "--config=/conf/aws-otel-config.yaml"
+            - "--log-level=DEBUG"
+          env:
+            - name: AWS_REGION
+              value: 'us-west-2'
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu:  256m
+              memory: 512Mi
+            requests:
+              cpu: 32m
+              memory: 24Mi
+          ports:
+            - containerPort: 55680 # OTLP receiver port.
+            - containerPort: 8888  # Prometheus Metrics.
+          volumeMounts:
+            - name: aws-otel-config-vol
+              mountPath: /conf
+      volumes:
+        - configMap:
+            name: aws-otel-conf
+            items:
+              - key: aws-otel-config
+                path: aws-otel-config.yaml
+          name: aws-otel-config-vol
+---
+# create deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aws-otel-sample-app
+  namespace: aws-otel-eks-service
+  labels:
+    name: aws-otel-sample-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: aws-otel-sample-app
+  template:
+    metadata:
+      labels:
+        name: aws-otel-sample-app
+    spec:
+      containers:
+        - name: aws-otel-sample-app
+          image: "aottestbed/aws-otel-collector-sample-app:java-0.1.0"
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: aws-otel-collector:55680
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.namespace=AWSObservability,service.name=CloudWatchEKSService"
+            - name: S3_REGION
+              value: 'us-west-2'
+          imagePullPolicy: Always
+
+
