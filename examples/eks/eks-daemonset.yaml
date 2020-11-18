@@ -27,6 +27,11 @@ data:
     exporters:
       awsxray:
       awsemf:
+      prometheus:
+        endpoint: "0.0.0.0:8889"
+        namespace: promexample
+        const_labels:
+          label1: value1
 
     service:
       pipelines:
@@ -35,7 +40,7 @@ data:
           exporters: [awsxray]
         metrics:
           receivers: [otlp]
-          exporters: [awsemf]
+          exporters: [awsemf, prometheus]
       extensions: [health_check]
 ---
 apiVersion: apps/v1
@@ -77,8 +82,8 @@ spec:
           ports:
             - containerPort: 55680 # Default OpenTelemetry receiver port.
               hostPort: 55680
-            - containerPort: 8888  # Metrics.
-              hostPort: 8888
+            - containerPort: 8889  # Metrics.
+              hostPort: 8889
           volumeMounts:
             - name: aws-otel-config-vol
               mountPath: /conf

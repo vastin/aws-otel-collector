@@ -27,6 +27,11 @@ data:
     exporters:
       awsxray:
       awsemf:
+      prometheus:
+        endpoint: "0.0.0.0:8889"
+        namespace: promexample
+        const_labels:
+          label1: value1
 
     service:
       pipelines:
@@ -35,7 +40,7 @@ data:
           exporters: [awsxray]
         metrics:
           receivers: [otlp]
-          exporters: [awsemf]
+          exporters: [awsemf, prometheus]
       extensions: [health_check]
 ---
 apiVersion: v1
@@ -53,9 +58,9 @@ spec:
       protocol: TCP
       targetPort: 55680
     - name: metrics # prometheus metrics.
-      port: 8888
+      port: 8889
       protocol: TCP
-      targetPort: 8888
+      targetPort: 8889
     - name: health # prometheus metrics.
       port: 13133
       protocol: TCP
@@ -103,7 +108,7 @@ spec:
               memory: 24Mi
           ports:
             - containerPort: 55680 # OTLP receiver port.
-            - containerPort: 8888  # Prometheus Metrics.
+            - containerPort: 8889  # Prometheus Metrics.
           volumeMounts:
             - name: aws-otel-config-vol
               mountPath: /conf
