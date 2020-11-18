@@ -45,7 +45,6 @@ You can setup EKS cluster for this demo on your AWS account by following [EKS Ge
 5. Choose Attach policies.
 
 #### Deploy AWSOTelCollector on Amazon EKS as Service
-The easiest way to deploy AWSOTelCollector on Amazon EKS is to run it as a sidecar, defining it in the same task definition as your application.
 
 1. Create a Kubernetes namespace.
 ```bash
