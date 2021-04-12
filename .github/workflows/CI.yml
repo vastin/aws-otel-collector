@@ -14,15 +14,17 @@
 name: C/I
 
 on:
-  push:
-    branches:
-      - main
-      - release-branch-v*
-      - dev
+#   push:
+#     branches:
+#       - main
+#       - release-branch-v*
+#       - dev
 
   # from collector and contrib repo
   repository_dispatch:
     types: [dependency-build, workflow-run]
+
+  workflow_dispatch:
 
 env:
   IMAGE_NAME: aws-otel-collector
@@ -105,16 +107,16 @@ jobs:
         key: "cached_binaries_${{ github.run_id }}"
         path: build
 
-    # Unit Test and attach test coverage badge
-    - name: Unit Test
-      if: steps.cached_binaries.outputs.cache-hit != 'true'
-      run: make test
+    # # Unit Test and attach test coverage badge
+    # - name: Unit Test
+    #   if: steps.cached_binaries.outputs.cache-hit != 'true'
+    #   run: make test
 
-    - name: Upload Coverage report to CodeCov
-      if: steps.cached_binaries.outputs.cache-hit != 'true'
-      uses: codecov/codecov-action@v1.0.12
-      with:
-        file: ./coverage.txt
+    # - name: Upload Coverage report to CodeCov
+    #   if: steps.cached_binaries.outputs.cache-hit != 'true'
+    #   uses: codecov/codecov-action@v1.0.12
+    #   with:
+    #     file: ./coverage.txt
 
     # Build and archive binaries into cache.
     - name: Build Binaries
@@ -128,30 +130,30 @@ jobs:
         name: binary_artifacts
         path: build
 
-  analyze:
-    name: CodeQL Analyze
-    runs-on: ubuntu-latest
+  # analyze:
+  #   name: CodeQL Analyze
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v2
+  #   steps:
+  #     - uses: actions/checkout@v2
 
-      - name: Cache if success
-        id: analyze
-        uses: actions/cache@v2
-        with:
-          path: |
-            VERSION
-          key: analyze-${{ github.run_id }}
+  #     - name: Cache if success
+  #       id: analyze
+  #       uses: actions/cache@v2
+  #       with:
+  #         path: |
+  #           VERSION
+  #         key: analyze-${{ github.run_id }}
 
-      - name: Initialize CodeQL
-        if: steps.analyze.outputs.cache-hit != 'true'
-        uses: github/codeql-action/init@v1
-        with:
-          languages: "go"
+  #     - name: Initialize CodeQL
+  #       if: steps.analyze.outputs.cache-hit != 'true'
+  #       uses: github/codeql-action/init@v1
+  #       with:
+  #         languages: "go"
 
-      - name: Perform CodeQL Analysis
-        if: steps.analyze.outputs.cache-hit != 'true'
-        uses: github/codeql-action/analyze@v1
+  #     - name: Perform CodeQL Analysis
+  #       if: steps.analyze.outputs.cache-hit != 'true'
+  #       uses: github/codeql-action/analyze@v1
 
   packaging-msi:
     needs: build
@@ -177,43 +179,43 @@ jobs:
           msiexec.exe /i AWSCLIV2.msi /passive
           [System.Environment]::SetEnvironmentVariable('Path',$Env:Path + ";C:\\Program Files\\Amazon\\AWSCLIV2",'User')
 
-      - name: Sign windows artifacts
-        run: |
-          $pkgfile = "build\packages\windows\amd64\aws-otel-collector.msi"
-          $hashobj = Get-FileHash -Algorithm sha256 $pkgfile
-          $hash = $hashobj.Hash
-          $create_date = Get-Date -format s
-          aws s3api put-object "--body" $pkgfile "--bucket" ${{ env.WIN_UNSIGNED_PKG_BUCKET }} "--key" ${{ env.WIN_UNSIGNED_PKG_FOLDER }}/aws-otel-collector-$hash.msi
-          $objkey = ""
-          for ($num = 1 ; $num -le 60 ; $num++) { # 60 * 10 = 600s = 10min timeout
-             Start-Sleep -s 10
-             Write-Output "Poll number $num"
-             $objkey = aws s3api list-objects "--bucket" ${{ env.WIN_SIGNED_PKG_BUCKET }} "--prefix" ${{ env.WIN_SIGNED_PKG_FOLDER }}/aws-otel-collector-$hash.msi "--output" text "--query" "Contents[?LastModified>'$create_date'].Key|[0]"
-             if ($objkey -ne "None") {
-               Write-Output "Found: $objkey"
-               break
-             } else {
-               Write-Output "$objkey returned, obj not available yet, try again later"
-             }
-          }
-          if ($objkey -eq "None") {
-            Throw "Could not find the signed artifact"
-          }
-          aws s3api get-object "--bucket" ${{ env.WIN_SIGNED_PKG_BUCKET }} "--key" $objkey $pkgfile
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SIGN_PKG_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SIGN_PKG_AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-west-2
+      # - name: Sign windows artifacts
+      #   run: |
+      #     $pkgfile = "build\packages\windows\amd64\aws-otel-collector.msi"
+      #     $hashobj = Get-FileHash -Algorithm sha256 $pkgfile
+      #     $hash = $hashobj.Hash
+      #     $create_date = Get-Date -format s
+      #     aws s3api put-object "--body" $pkgfile "--bucket" ${{ env.WIN_UNSIGNED_PKG_BUCKET }} "--key" ${{ env.WIN_UNSIGNED_PKG_FOLDER }}/aws-otel-collector-$hash.msi
+      #     $objkey = ""
+      #     for ($num = 1 ; $num -le 60 ; $num++) { # 60 * 10 = 600s = 10min timeout
+      #        Start-Sleep -s 10
+      #        Write-Output "Poll number $num"
+      #        $objkey = aws s3api list-objects "--bucket" ${{ env.WIN_SIGNED_PKG_BUCKET }} "--prefix" ${{ env.WIN_SIGNED_PKG_FOLDER }}/aws-otel-collector-$hash.msi "--output" text "--query" "Contents[?LastModified>'$create_date'].Key|[0]"
+      #        if ($objkey -ne "None") {
+      #          Write-Output "Found: $objkey"
+      #          break
+      #        } else {
+      #          Write-Output "$objkey returned, obj not available yet, try again later"
+      #        }
+      #     }
+      #     if ($objkey -eq "None") {
+      #       Throw "Could not find the signed artifact"
+      #     }
+      #     aws s3api get-object "--bucket" ${{ env.WIN_SIGNED_PKG_BUCKET }} "--key" $objkey $pkgfile
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.SIGN_PKG_AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.SIGN_PKG_AWS_SECRET_ACCESS_KEY }}
+      #     AWS_DEFAULT_REGION: us-west-2
 
-      - name: Verify package signature
-        run: |
-          $pkgfile = "build\packages\windows\amd64\aws-otel-collector.msi"
-          $sig = Get-AuthenticodeSignature $pkgfile
-          $status = $sig.Status
-          if ($status -ne "Valid") {
-            Throw "Invalid signature found: $status"
-          }
-          Write-Output "Valid signature found from the package"
+      # - name: Verify package signature
+      #   run: |
+      #     $pkgfile = "build\packages\windows\amd64\aws-otel-collector.msi"
+      #     $sig = Get-AuthenticodeSignature $pkgfile
+      #     $status = $sig.Status
+      #     if ($status -ne "Valid") {
+      #       Throw "Invalid signature found: $status"
+      #     }
+      #     Write-Output "Valid signature found from the package"
 
       - name: Upload the msi
         uses: actions/upload-artifact@v2
@@ -251,36 +253,36 @@ jobs:
           ARCH=x86_64 DEST=build/packages/linux/amd64 tools/packaging/linux/create_rpm.sh
           ARCH=aarch64 DEST=build/packages/linux/arm64 tools/packaging/linux/create_rpm.sh
 
-      - name: Download Package Signing GPG key
-        if: steps.cached_rpms.outputs.cache-hit != 'true'
-        run: |
-          aws secretsmanager get-secret-value --region us-west-2 --secret-id "$PKG_SIGN_PRIVATE_KEY_NAME" | jq -r ".SecretString" > pkg_sign_private.key
-          md5sum pkg_sign_private.key
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SIGN_PKG_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SIGN_PKG_AWS_SECRET_ACCESS_KEY }}
+      # - name: Download Package Signing GPG key
+      #   if: steps.cached_rpms.outputs.cache-hit != 'true'
+      #   run: |
+      #     aws secretsmanager get-secret-value --region us-west-2 --secret-id "$PKG_SIGN_PRIVATE_KEY_NAME" | jq -r ".SecretString" > pkg_sign_private.key
+      #     md5sum pkg_sign_private.key
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.SIGN_PKG_AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.SIGN_PKG_AWS_SECRET_ACCESS_KEY }}
 
-      - name: Import Package Signing GPG Key
-        if: steps.cached_rpms.outputs.cache-hit != 'true'
-        run: |
-          gpg --import pkg_sign_private.key
-          gpg --list-keys
-          gpg --armor --export -a "aws-otel-collector@amazon.com" > pkg_sign_public.key
-          rpm --import pkg_sign_public.key
-          echo "%_gpg_name aws-otel-collector@amazon.com" > ~/.rpmmacros
-          md5sum pkg_sign_public.key
-          shred -fuvz pkg_sign_private.key
+      # - name: Import Package Signing GPG Key
+      #   if: steps.cached_rpms.outputs.cache-hit != 'true'
+      #   run: |
+      #     gpg --import pkg_sign_private.key
+      #     gpg --list-keys
+      #     gpg --armor --export -a "aws-otel-collector@amazon.com" > pkg_sign_public.key
+      #     rpm --import pkg_sign_public.key
+      #     echo "%_gpg_name aws-otel-collector@amazon.com" > ~/.rpmmacros
+      #     md5sum pkg_sign_public.key
+      #     shred -fuvz pkg_sign_private.key
 
-      - name: Sign RPM Pakcage
-        if: steps.cached_rpms.outputs.cache-hit != 'true'
-        run: |
-          rpmsign --addsign build/packages/linux/*/*.rpm
+      # - name: Sign RPM Pakcage
+      #   if: steps.cached_rpms.outputs.cache-hit != 'true'
+      #   run: |
+      #     rpmsign --addsign build/packages/linux/*/*.rpm
 
-      - name: Remove Package Signing GPG Key from local GPG Key Ring
-        if: steps.cached_rpms.outputs.cache-hit != 'true'
-        run: |
-          gpg --fingerprint --with-colons aws-otel-collector@amazon.com grep "^fpr" | sed -n 's/^fpr:::::::::\([[:alnum:]]\+\):/\1/p' | xargs gpg --batch --yes --delete-secret-keys
-          gpg --list-secret-keys
+      # - name: Remove Package Signing GPG Key from local GPG Key Ring
+      #   if: steps.cached_rpms.outputs.cache-hit != 'true'
+      #   run: |
+      #     gpg --fingerprint --with-colons aws-otel-collector@amazon.com grep "^fpr" | sed -n 's/^fpr:::::::::\([[:alnum:]]\+\):/\1/p' | xargs gpg --batch --yes --delete-secret-keys
+      #     gpg --list-secret-keys
 
   packaging-deb:
     runs-on: ubuntu-latest
@@ -309,33 +311,33 @@ jobs:
           ARCH=amd64 TARGET_SUPPORTED_ARCH=x86_64 DEST=build/packages/debian/amd64 tools/packaging/debian/create_deb.sh
           ARCH=arm64 TARGET_SUPPORTED_ARCH=aarch64 DEST=build/packages/debian/arm64 tools/packaging/debian/create_deb.sh
 
-      - name: Download Package Signing GPG key
-        if: steps.cached_debs.outputs.cache-hit != 'true'
-        run: |
-          aws secretsmanager get-secret-value --region us-west-2 --secret-id "$PKG_SIGN_PRIVATE_KEY_NAME" | jq -r ".SecretString" > pkg_sign_private.key
-          md5sum pkg_sign_private.key
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SIGN_PKG_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SIGN_PKG_AWS_SECRET_ACCESS_KEY }}
+      # - name: Download Package Signing GPG key
+      #   if: steps.cached_debs.outputs.cache-hit != 'true'
+      #   run: |
+      #     aws secretsmanager get-secret-value --region us-west-2 --secret-id "$PKG_SIGN_PRIVATE_KEY_NAME" | jq -r ".SecretString" > pkg_sign_private.key
+      #     md5sum pkg_sign_private.key
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.SIGN_PKG_AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.SIGN_PKG_AWS_SECRET_ACCESS_KEY }}
 
-      - name: Import Package Signing GPG Key
-        if: steps.cached_debs.outputs.cache-hit != 'true'
-        run: |
-          gpg --import pkg_sign_private.key
-          gpg --list-secret-keys
-          shred -fuvz pkg_sign_private.key
+      # - name: Import Package Signing GPG Key
+      #   if: steps.cached_debs.outputs.cache-hit != 'true'
+      #   run: |
+      #     gpg --import pkg_sign_private.key
+      #     gpg --list-secret-keys
+      #     shred -fuvz pkg_sign_private.key
 
-      - name: Sign DEB Pakcage
-        if: steps.cached_debs.outputs.cache-hit != 'true'
-        run: |
-          sudo apt install -y dpkg-sig
-          dpkg-sig --sign origin -k "aws-otel-collector@amazon.com" build/packages/debian/*/*.deb
+      # - name: Sign DEB Pakcage
+      #   if: steps.cached_debs.outputs.cache-hit != 'true'
+      #   run: |
+      #     sudo apt install -y dpkg-sig
+      #     dpkg-sig --sign origin -k "aws-otel-collector@amazon.com" build/packages/debian/*/*.deb
 
-      - name: Remove Package Signing GPG Key from local GPG Key Ring
-        if: steps.cached_debs.outputs.cache-hit != 'true'
-        run: |
-          gpg --fingerprint --with-colons aws-otel-collector@amazon.com grep "^fpr" | sed -n 's/^fpr:::::::::\([[:alnum:]]\+\):/\1/p' | xargs gpg --batch --yes --delete-secret-keys
-          gpg --list-secret-keys
+      # - name: Remove Package Signing GPG Key from local GPG Key Ring
+      #   if: steps.cached_debs.outputs.cache-hit != 'true'
+      #   run: |
+      #     gpg --fingerprint --with-colons aws-otel-collector@amazon.com grep "^fpr" | sed -n 's/^fpr:::::::::\([[:alnum:]]\+\):/\1/p' | xargs gpg --batch --yes --delete-secret-keys
+      #     gpg --list-secret-keys
 
   packaging-image:
     runs-on: ubuntu-latest
@@ -515,12 +517,12 @@ jobs:
           ssm_pkg_version=`cat build/packages/VERSION`
           ssm_pkg_version="${ssm_pkg_version:1}"
           python3 tools/ssm/ssm_manifest.py ${ssm_pkg_version}
-          aws s3 cp build/packages/ssm s3://aws-otel-collector-test/ssm --recursive
-          bash tools/ssm/ssm_create.sh testAWSDistroOTel-Collector ${ssm_pkg_version} aws-otel-collector-test/ssm
+          aws s3 cp build/packages/ssm s3://bucket20210116/output --recursive
+          bash tools/ssm/ssm_create.sh testAWSDistroOTel-Collector ${ssm_pkg_version} bucket20210116/output
 
-      - name: upload to s3 in the testing stack
-        if: steps.e2etest-release.outputs.cache-hit != 'true'
-        run: s3_bucket_name=aws-otel-collector-test upload_to_latest=0 bash tools/release/s3-release.sh
+      # - name: upload to s3 in the testing stack
+      #   if: steps.e2etest-release.outputs.cache-hit != 'true'
+      #   run: s3_bucket_name=aws-otel-collector-test upload_to_latest=0 bash tools/release/s3-release.sh
 
       - name: Login ECR
         if: steps.e2etest-release.outputs.cache-hit != 'true'
@@ -594,7 +596,7 @@ jobs:
     needs: [get-testing-suites, e2etest-release, e2etest-preparation]
     strategy:
       fail-fast: false
-      max-parallel: 5
+      max-parallel: 1
       matrix: ${{ fromJson(needs.get-testing-suites.outputs.ec2-matrix-1) }}
 
     steps:
@@ -655,7 +657,7 @@ jobs:
     needs: [get-testing-suites, e2etest-release, e2etest-preparation]
     strategy:
       fail-fast: false
-      max-parallel: 5
+      max-parallel: 1
       matrix: ${{ fromJson(needs.get-testing-suites.outputs.ec2-matrix-2) }}
 
     steps:
@@ -716,7 +718,7 @@ jobs:
     needs: [get-testing-suites, e2etest-release, e2etest-preparation]
     strategy:
       fail-fast: false
-      max-parallel: 5
+      max-parallel: 1
       matrix: ${{ fromJson(needs.get-testing-suites.outputs.ec2-matrix-3) }}
 
     steps:
@@ -778,7 +780,7 @@ jobs:
     needs: [get-testing-suites, e2etest-release, e2etest-preparation]
     strategy:
       fail-fast: false
-      max-parallel: 5
+      max-parallel: 1
       matrix: ${{ fromJson(needs.get-testing-suites.outputs.ecs-matrix) }}
 
     steps:
@@ -835,7 +837,7 @@ jobs:
     needs: [get-testing-suites, e2etest-release, e2etest-preparation]
     strategy:
       fail-fast: false
-      max-parallel: 5
+      max-parallel: 1
       matrix: ${{ fromJson(needs.get-testing-suites.outputs.eks-matrix) }}
 
     steps:
@@ -890,7 +892,7 @@ jobs:
     needs: [ get-testing-suites, e2etest-release, e2etest-preparation ]
     strategy:
       fail-fast: false
-      max-parallel: 5
+      max-parallel: 1
       matrix: ${{ fromJson(needs.get-testing-suites.outputs.containerinsight-eks-prometheus-matrix) }}
 
     steps:
