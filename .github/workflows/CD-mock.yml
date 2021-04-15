@@ -1,0 +1,22 @@
+name: mock C/D 
+
+on:        
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'the version number to release'
+        required: true
+      sha:
+        description: 'the github sha to release'
+        required: true
+
+jobs:
+  release-to-github:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger SSM package build and public
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: release SSM package
+          token: ${{ secrets.REPO_WRITE_ACCESS_TOKEN }}
+          inputs: '{ "version": "${{ github.event.inputs.version }}", "sha": "${{ github.event.inputs.sha }}", "public": "true" }'

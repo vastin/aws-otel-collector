@@ -20,6 +20,9 @@ on:
         description: 'set SSM package name'
         required: false
         default: 'testAWSDistroOTel-Collector'
+      sha:
+        description: 'set github sha'
+        required: true
 
 env:
   IMAGE_NAME: aws-otel-collector
@@ -47,6 +50,8 @@ jobs:
         go-version: ^1.13
 
     - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.inputs.sha }}
 
     - name: Cache binaries
       id: cached_binaries
@@ -442,11 +447,12 @@ jobs:
       - name: Create SSM package
         if: steps.e2etest-release.outputs.cache-hit != 'true'
         run: |
+          pip3 install boto3
           ssm_pkg_version=`cat build/packages/VERSION`
           ssm_pkg_version="${ssm_pkg_version:1}"
           python3 tools/ssm/ssm_manifest.py ${ssm_pkg_version}
           aws s3 cp build/packages/ssm s3://bucket20210116/output --recursive
-          bash tools/ssm/ssm_create.sh ${{ github.event.inputs.pkg_name }} ${ssm_pkg_version} bucket20210116/output
+          python3 tools/ssm/ssm_create.py ${{ github.event.inputs.pkg_name }} ${ssm_pkg_version} bucket20210116/output us-west-2
 
       # - name: upload to s3 in the testing stack
       #   run: s3_bucket_name=bucket20210116 upload_to_latest=0 bash tools/release/s3-release.sh
@@ -485,10 +491,10 @@ jobs:
           TESTING_VERSION=`cat build/packages/VERSION`
           VERSION=`echo $TESTING_VERSION | awk -F "-" '{print $1}'`
           echo $VERSION > build/packages/VERSION
-          echo $GITHUB_SHA > build/packages/GITHUB_SHA
+          echo ${{ github.event.inputs.sha }} > build/packages/GITHUB_SHA
           echo $TESTING_VERSION > build/packages/TESTING_VERSION
 
       - name: upload packages as release candidate on s3
         run: |
-          tar czvf $GITHUB_SHA.tar.gz build
-          aws s3 cp $GITHUB_SHA.tar.gz s3://bucket20210116/aoc-build/$GITHUB_SHA.tar.gz
+          tar czvf ${{ github.event.inputs.sha }}.tar.gz build
+          aws s3 cp ${{ github.event.inputs.sha }}.tar.gz s3://bucket20210116/aoc-build/${{ github.event.inputs.sha }}.tar.gz
