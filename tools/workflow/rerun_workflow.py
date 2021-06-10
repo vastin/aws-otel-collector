@@ -28,6 +28,9 @@ while (int(time.time()) - start < timeout):
             api.actions.re_run_workflow(run_id)
             print("Re-run workflow")
             os.exit(0)
+        else
+            print("Needn't re-run if it is sucess or cancelled")
+            os.exit(0)
     else:
         time.sleep(interval)
         print("Sleep %d seconds" % interval)
