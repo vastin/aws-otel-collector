@@ -22,8 +22,19 @@ jobs:
     steps: 
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Cache if success
+        id: workflow-rerun
+        uses: actions/cache@v2
+        with:
+          path: |
+            VERSION
+          key: workflow-rerun-${{ github.run_id }}
+
       - name: Re-run workflow
+        if: steps.workflow-rerun.cache-hit != 'true'
         run: |
           pip3 install ghapi
           python3 tools/workflow/rerun_workflow.py ${{ github.event.inputs.owner }} ${{ github.event.inputs.repository }} ${{ github.event.inputs.runid }}
+
 
