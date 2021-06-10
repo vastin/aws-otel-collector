@@ -32,7 +32,7 @@ jobs:
           key: workflow-rerun-${{ github.event.inputs.runid }}
 
       - name: Re-run workflow
-        if: steps.workflow-rerun.cache-hit != 'true'
+        if: steps.workflow-rerun.outputs.cache-hit != 'true'
         run: |
           pip3 install ghapi
           python3 tools/workflow/rerun_workflow.py ${{ github.event.inputs.owner }} ${{ github.event.inputs.repository }} ${{ github.event.inputs.runid }}
