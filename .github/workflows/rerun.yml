@@ -1,0 +1,29 @@
+name: re-run workflow
+
+on:        
+  workflow_dispatch:
+    inputs:
+      owner:
+        description: 'repository owner name'
+        required: true
+      repository:
+        description: 'repository name'
+        required: true
+      runid:
+        description: 'workflow run id'
+        required: true
+
+env:
+  GITHUB_TOKEN: ${{ secrets.REPO_WRITE_ACCESS_TOKEN }}
+
+jobs:
+  re-run-workflow: 
+    runs-on: ubuntu-latest
+    steps: 
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Re-run workflow
+        run: |
+          pip3 install ghapi
+          python3 tools/workflow/rerun_workflow.py ${{ github.event.inputs.owner }} ${{ github.event.inputs.repository }} ${{ github.event.inputs.runid }}
+

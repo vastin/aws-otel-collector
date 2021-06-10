@@ -1,0 +1,15 @@
+name: CI retry mock 
+
+on:        
+  workflow_dispatch:
+
+jobs:
+  invoke-rerun-workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger re-run workflow
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: re-run workflow
+          token: ${{ secrets.REPO_WRITE_ACCESS_TOKEN }}
+          inputs: '{ "owner": "vastin", "repository": "aws-otel-collector", "runid": "${{ github.run_id }}" }'
