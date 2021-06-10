@@ -29,7 +29,7 @@ jobs:
         with:
           path: |
             VERSION
-          key: workflow-rerun-${{ github.run_id }}
+          key: workflow-rerun-${{ github.event.inputs.runid }}
 
       - name: Re-run workflow
         if: steps.workflow-rerun.cache-hit != 'true'
