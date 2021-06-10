@@ -17,22 +17,64 @@ env:
   GITHUB_TOKEN: ${{ secrets.REPO_WRITE_ACCESS_TOKEN }}
 
 jobs:
-  re-run-workflow: 
+  re-run-1: 
     runs-on: ubuntu-latest
     steps: 
       - name: Checkout
         uses: actions/checkout@v2
 
       - name: Cache if success
-        id: workflow-rerun
+        id: workflow-rerun-1
         uses: actions/cache@v2
         with:
           path: |
             VERSION
-          key: workflow-rerun-${{ github.event.inputs.runid }}
+          key: workflow-rerun-1-${{ github.event.inputs.runid }}
 
       - name: Re-run workflow
-        if: steps.workflow-rerun.outputs.cache-hit != 'true'
+        if: steps.workflow-rerun-1.outputs.cache-hit != 'true'
+        run: |
+          pip3 install ghapi
+          python3 tools/workflow/rerun_workflow.py ${{ github.event.inputs.owner }} ${{ github.event.inputs.repository }} ${{ github.event.inputs.runid }}
+
+  re-run-2:
+    needs: re-run-1
+    runs-on: ubuntu-latest
+    steps: 
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Cache if success
+        id: workflow-rerun-2
+        uses: actions/cache@v2
+        with:
+          path: |
+            VERSION
+          key: workflow-rerun-2-${{ github.event.inputs.runid }}
+
+      - name: Re-run workflow
+        if: steps.workflow-rerun-2.outputs.cache-hit != 'true'
+        run: |
+          pip3 install ghapi
+          python3 tools/workflow/rerun_workflow.py ${{ github.event.inputs.owner }} ${{ github.event.inputs.repository }} ${{ github.event.inputs.runid }}
+
+  re-run-3: 
+    needs: re-run-2
+    runs-on: ubuntu-latest
+    steps: 
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Cache if success
+        id: workflow-rerun-3
+        uses: actions/cache@v2
+        with:
+          path: |
+            VERSION
+          key: workflow-rerun-3-${{ github.event.inputs.runid }}
+
+      - name: Re-run workflow
+        if: steps.workflow-rerun-3.outputs.cache-hit != 'true'
         run: |
           pip3 install ghapi
           python3 tools/workflow/rerun_workflow.py ${{ github.event.inputs.owner }} ${{ github.event.inputs.repository }} ${{ github.event.inputs.runid }}
