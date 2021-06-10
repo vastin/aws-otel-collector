@@ -2,7 +2,7 @@
 
 import argparse
 import time
-import os
+import sys
 from ghapi.all import GhApi
 
 timeout = 3*60*60 # wait for max 3 hours
@@ -27,13 +27,15 @@ while (int(time.time()) - start < timeout):
         if result != "success" and result != "cancelled":
             api.actions.re_run_workflow(run_id)
             print("Re-run workflow")
-            os.exit(0)
+            sys.exit(0)
         else:
             print("Needn't re-run if it is sucess or cancelled")
-            os.exit(0)
+            sys.exit(0)
     else:
         time.sleep(interval)
         print("Sleep %d seconds" % interval)
 print("Time out!!!")
+sys.exit(1)
+
 
 
