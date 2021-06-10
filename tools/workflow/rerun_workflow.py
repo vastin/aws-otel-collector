@@ -29,7 +29,7 @@ while (int(time.time()) - start < timeout):
             print("Re-run workflow")
             sys.exit(0)
         else:
-            print("Needn't re-run if it is sucess or cancelled")
+            print("Needn't re-run if it is success or cancelled")
             sys.exit(0)
     else:
         time.sleep(interval)

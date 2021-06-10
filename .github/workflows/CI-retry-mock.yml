@@ -13,3 +13,15 @@ jobs:
           workflow: re-run workflow
           token: ${{ secrets.REPO_WRITE_ACCESS_TOKEN }}
           inputs: '{ "owner": "vastin", "repository": "aws-otel-collector", "runid": "${{ github.run_id }}" }'
+  fail-test:
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: step1
+        run: |
+          echo step1
+      - name: sleep more than 5 mins
+        run: |
+          sleep 400
+      - name: step2 # the fail step
+        run: |
+          fail
