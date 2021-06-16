@@ -23,7 +23,7 @@ jobs:
       - name: Re-run workflow
         run: |
           pip3 install ghapi
-          repo_info="{{ github.event.inputs.repo }}"
+          repo_info=${{ github.event.inputs.repo }}
           params=(${repo_info//// })
           echo "owner =" ${params[0]}
           echo "repository =" ${params[1]}
