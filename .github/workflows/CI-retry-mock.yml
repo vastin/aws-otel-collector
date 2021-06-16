@@ -17,7 +17,7 @@ jobs:
         with:
           path: |
             VERSION
-          key: workflow-rerun-${{ github.runid }}
+          key: workflow-rerun-${{ github.run_id }}
       - name: Trigger re-run workflow
         if: steps.workflow-rerun.outputs.cache-hit != 'true'
         uses: benc-uk/workflow-dispatch@v1
@@ -33,7 +33,7 @@ jobs:
         with:
           path: |
             VERSION
-          key: workflow-rerun-${{ github.runid }}
+          key: workflow-rerun-${{ github.run_id }}
       - name: Trigger re-run workflow
         if: steps.workflow-rerun.outputs.cache-hit == 'true' && steps.workflow-rerun-2.outputs.cache-hit != 'true'
         uses: benc-uk/workflow-dispatch@v1
