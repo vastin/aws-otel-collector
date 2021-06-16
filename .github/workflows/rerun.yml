@@ -3,11 +3,8 @@ name: re-run workflow
 on:        
   workflow_dispatch:
     inputs:
-      owner:
-        description: 'repository owner name'
-        required: true
-      repository:
-        description: 'repository name'
+      repo:
+        description: 'owner/repository'
         required: true
       runid:
         description: 'workflow run id'
@@ -23,22 +20,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # - name: Cache if success
-      #   id: workflow-rerun
-      #   uses: actions/cache@v2
-      #   with:
-      #     path: |
-      #       VERSION
-      #     key: workflow-rerun-${{ github.event.inputs.runid }}
-
-      # - name: Re-run workflow
-      #   if: steps.workflow-rerun.outputs.cache-hit != 'true'
-      #   run: |
-      #     pip3 install ghapi
-      #     python3 tools/workflow/rerun_workflow.py ${{ github.event.inputs.owner }} ${{ github.event.inputs.repository }} ${{ github.event.inputs.runid }}
-
       - name: Re-run workflow
         run: |
           pip3 install ghapi
-          python3 tools/workflow/rerun_workflow.py ${{ github.event.inputs.owner }} ${{ github.event.inputs.repository }} ${{ github.event.inputs.runid }}
+          repo_info={{ github.event.inputs.repo }}
+          params=(${repo_info//// })
+          echo "owner =" ${params[0]}
+          echo "repository =" ${params[1]}
+          python3 tools/workflow/rerun_workflow.py ${params[0]} ${params[1]} ${{ github.event.inputs.runid }}
 
