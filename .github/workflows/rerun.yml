@@ -27,5 +27,6 @@ jobs:
           params=(${repo_info//// })
           echo "owner =" ${params[0]}
           echo "repository =" ${params[1]}
+          echo "runid =" ${{ github.event.inputs.runid }}
           python3 tools/workflow/rerun_workflow.py ${params[0]} ${params[1]} ${{ github.event.inputs.runid }}
 

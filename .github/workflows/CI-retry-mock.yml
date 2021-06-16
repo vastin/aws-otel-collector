@@ -26,37 +26,37 @@ jobs:
           token: ${{ secrets.REPO_WRITE_ACCESS_TOKEN }}
           inputs: '{ "repo": "${{ github.repository }}", "runid": "${{ github.run_id }}" }'
 
-      # - name: Cache 2 if success
-      #   if: steps.workflow-rerun-1.outputs.cache-hit == 'true'
-      #   id: workflow-rerun-2
-      #   uses: actions/cache@v2
-      #   with:
-      #     path: |
-      #       VERSION
-      #     key: workflow-rerun-2-${{ github.run_id }}
-      # - name: Trigger re-run workflow
-      #   if: steps.workflow-rerun-1.outputs.cache-hit == 'true' && steps.workflow-rerun-2.outputs.cache-hit != 'true'
-      #   uses: benc-uk/workflow-dispatch@v1
-      #   with:
-      #     workflow: re-run workflow
-      #     token: ${{ secrets.REPO_WRITE_ACCESS_TOKEN }}
-      #     inputs: '{ "repo": "${{ github.repository }}", "runid": "${{ github.run_id }}" }'
+      - name: Cache 2 if success
+        if: steps.workflow-rerun-1.outputs.cache-hit == 'true'
+        id: workflow-rerun-2
+        uses: actions/cache@v2
+        with:
+          path: |
+            VERSION
+          key: workflow-rerun-2-${{ github.run_id }}
+      - name: Trigger re-run workflow
+        if: steps.workflow-rerun-1.outputs.cache-hit == 'true' && steps.workflow-rerun-2.outputs.cache-hit != 'true'
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: re-run workflow
+          token: ${{ secrets.REPO_WRITE_ACCESS_TOKEN }}
+          inputs: '{ "repo": "${{ github.repository }}", "runid": "${{ github.run_id }}" }'
 
-      # - name: Cache 3 if success
-      #   if: steps.workflow-rerun-2.outputs.cache-hit == 'true'
-      #   id: workflow-rerun-3
-      #   uses: actions/cache@v2
-      #   with:
-      #     path: |
-      #       VERSION
-      #     key: workflow-rerun-3-${{ github.run_id }}
-      # - name: Trigger re-run workflow
-      #   if: steps.workflow-rerun-2.outputs.cache-hit == 'true' && steps.workflow-rerun-3.outputs.cache-hit != 'true'
-      #   uses: benc-uk/workflow-dispatch@v1
-      #   with:
-      #     workflow: re-run workflow
-      #     token: ${{ secrets.REPO_WRITE_ACCESS_TOKEN }}
-      #     inputs: '{ "repo": "${{ github.repository }}", "runid": "${{ github.run_id }}" }'
+      - name: Cache 3 if success
+        if: steps.workflow-rerun-2.outputs.cache-hit == 'true'
+        id: workflow-rerun-3
+        uses: actions/cache@v2
+        with:
+          path: |
+            VERSION
+          key: workflow-rerun-3-${{ github.run_id }}
+      - name: Trigger re-run workflow
+        if: steps.workflow-rerun-2.outputs.cache-hit == 'true' && steps.workflow-rerun-3.outputs.cache-hit != 'true'
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: re-run workflow
+          token: ${{ secrets.REPO_WRITE_ACCESS_TOKEN }}
+          inputs: '{ "repo": "${{ github.repository }}", "runid": "${{ github.run_id }}" }'
 
   fail-test:
     runs-on: [ubuntu-latest]
@@ -64,9 +64,9 @@ jobs:
       - name: step1
         run: |
           echo step1
-      # - name: sleep more than 5 mins
-      #   run: |
-      #     sleep 400
+      - name: sleep more than 5 mins
+        run: |
+          sleep 400
       - name: step2 # the fail step
         run: |
           fail
