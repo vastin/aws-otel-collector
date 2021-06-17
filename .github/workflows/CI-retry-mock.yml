@@ -6,7 +6,6 @@ on:
 jobs:
   invoke-rerun-workflow:
     runs-on: ubuntu-latest
-
     steps: 
       - name: Checkout
         uses: actions/checkout@v2
@@ -67,12 +66,12 @@ jobs:
       - name: sleep more than 5 mins
         run: |
           sleep 400
-      - name: sleep 1 hour
-        run: |
-          sleep 3600
-      - name: sleep 1 hour
-        run: |
-          sleep 3600
-      - name: step2 # the fail step
-        run: |
-          fail
+      # - name: sleep 1 hour
+      #   run: |
+      #     sleep 3600
+      # - name: sleep 1 hour
+      #   run: |
+      #     sleep 3600
+      # - name: step2 # the fail step
+      #   run: |
+      #     fail
